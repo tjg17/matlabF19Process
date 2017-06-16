@@ -88,7 +88,6 @@ image_info.setRescaleSlope(1);
 
 %% Make Copies of f19 frame 1 image info for new volumes
 max_info            = image_info.getMutableCopy();
-time2max_info       = image_info.getMutableCopy();
 time2maxTime_info   = image_info.getMutableCopy();
 d0_info             = image_info.getMutableCopy();
 df_info             = image_info.getMutableCopy();
@@ -101,11 +100,6 @@ t1_info             = image_info.getMutableCopy();
 max_info.setCustomName('Max Map')
 assignin('base', 'max_map', int16(max_map));
 bridge.sendImageToMim('max_map', max_info);
-
-%% send the time2max_map result back to MIM
-time2max_info.setCustomName('Time To Max Map')
-assignin('base', 'time2max_map', int16(time2max_map));
-bridge.sendImageToMim('time2max_map', time2max_info);
 
 %% send the time2max_mapTimes result back to MIM
 time2maxTime_info.setCustomName('Time To Max Times map')
