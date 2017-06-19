@@ -34,7 +34,7 @@ for i = 1:frame_count
     rescaleSlopes(i) = info.getRescaleSlope();
     rescaleIntercepts(i) = info.getRescaleIntercept();
     
-    % Get F19 volume info and rescale properly
+    % Get F19 volume info for a frame and rescale properly
     frame_image_string  = strcat('f19_frame_', int2str(i));
     frame_image = evalin('base', frame_image_string)*rescaleSlopes(i)+rescaleIntercepts(i);
     F19_vol(:,:,:,i) = medfilt3(frame_image); % median filtering of each frame image
