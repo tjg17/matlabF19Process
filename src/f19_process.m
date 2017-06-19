@@ -415,6 +415,6 @@ while count <= nel
 end
 
 %% Stop Timer
-fprintf('\nFit Maps Completed (total time: %0.1f Seconds)\n\n',toc(tfitStart))
+fprintf('\nFit Maps Completed (total time: %0.1f Minutes)\n\n',toc(tfitStart)/60)
 
 end
