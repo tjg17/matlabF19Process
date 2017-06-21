@@ -58,10 +58,11 @@ scantimes  = ScanTimes;
 last_pfp = 6;
 
 %% Define Derived Variables
-nrows     = size(image, 1); % number of rows in image
-ncols     = size(image, 2); % number of cols in image
-nslices   = size(image, 3); % number of slices in image
-nscans    = size(image, 4); % number of scans in time
+nrows     = size(image, 1);         % number of rows in image
+ncols     = size(image, 2);         % number of cols in image
+nslices   = size(image, 3);         % number of slices in image
+nscans    = size(image, 4);         % number of scans in time
+nel       = nrows*ncols*nslices;    % number of elements in image
 
 %% Find mean pixel values in ROI
 [ means , mask ] = ComputePixelAverageIn3DROI( image, roi );
@@ -74,13 +75,13 @@ nscans    = size(image, 4); % number of scans in time
 [ masked_all ] = maskcellimages( mask, image, nrows, ncols, nslices, nscans );
 
 %% Find peak wash-in and time to peak wash-in for each voxel
-[ vvec2, nrows, ncols, nslice, nel, nscans ] = voxel_vector( masked_all, nscans );
+[ vvec2 ] = voxel_vector( masked_all , nrows , ncols , nslices , nel , nscans );
 
 %% Computing Max Wash in Times
-[ max_map , time2max_map , time2max_mapTimes ] = max_washin_time( vvec2, nrows, ncols, nslice, nel, image, scantimes, 1, nscans, last_pfp, last_pfp, mask );
+[ max_map , time2max_map , time2max_mapTimes ] = max_washin_time( vvec2, nrows, ncols, nslices, nel, image, scantimes, 1, nscans, last_pfp, last_pfp, mask );
 
  %% choose one method, and apply to each voxel
-[ d0_map , df_map , tau1_map , tau2_map , t0_map , t1_map ] = ffitmaps( nrows, ncols, nslice, nscans, nel, time2max_map, time2max_mapTimes, vvec2, scantimes, f4 );
+[ d0_map , df_map , tau1_map , tau2_map , t0_map , t1_map ] = ffitmaps( nrows, ncols, nslices, nscans, nel, time2max_map, time2max_mapTimes, vvec2, scantimes, f4 );
 
 %% get f19 MIM volume information (ShimMatlabImageInfo) for frame 1
 image_info = evalin('base','f19_frame_1_info');
@@ -137,7 +138,7 @@ assignin('base', 't1_map', int16(t1_map));
 bridge.sendImageToMim('t1_map', t1_info);
 
 %% Stop Timer
-fprintf('\nFinished F19 Processing.\nTotal Time %0.1f Seconds.\n\n',toc(timeStart))
+fprintf('\nFinished F19 Processing.\nTotal Time %0.1f Minutes.\n\n',toc(timeStart)/60)
 
 end
 
@@ -226,7 +227,7 @@ fprintf('done (%0.1f Seconds)',toc(tStart))
 
 end
 
-function [ vvec, nrow, ncol, nslice, nel, nscans ] = voxel_vector( all_scan, nscans )
+function [ vvec ] = voxel_vector( all_scan, nrows , ncols , nslices , nel , nscans )
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -234,11 +235,7 @@ function [ vvec, nrow, ncol, nslice, nel, nscans ] = voxel_vector( all_scan, nsc
 fprintf('\nComputing peak wash-in fit for each voxel...'); tStart = tic;
 
 %% Function Code
-nvox = numel(all_scan);
-nel = numel(all_scan{1});
-nslice = size(all_scan{1},3);
-nrow = size(all_scan,1);
-ncol = size(all_scan,2);
+
 i = 1;%row
 j = 1;%col
 % k = 1;%slice
@@ -248,10 +245,10 @@ n = 1;
 vvec = ones(nel, nscans);
 
 while n  <= nel%voxel
-    for k = 1:nslice
+    for k = 1:nslices
 %         k = p;
-        while i <= nrow
-            while j <= ncol
+        while i <= nrows
+            while j <= ncols
                 for m = 1:nscans%scan
                     vvec(n,m) = all_scan{m}(i,j,k); % can be changed from all to all_roi
 %                     k = p+(m*nslice);
