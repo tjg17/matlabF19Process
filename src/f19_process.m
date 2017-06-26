@@ -81,7 +81,7 @@ nel       = nrows*ncols*nslices;    % number of elements in image
 [ max_map , time2max_map , time2max_mapTimes ] = max_washin_time( vvec2, nrows, ncols, nslices, nel, image, scantimes, 1, nscans, last_pfp, last_pfp, mask );
 
  %% choose one method, and apply to each voxel
-[ d0_map , df_map , tau1_map , tau2_map , t0_map , t1_map ] = ffitmaps( nrows, ncols, nslices, nscans, nel, time2max_map, time2max_mapTimes, vvec2, scantimes, f4 );
+[ d0_map , df_map , tau1_map , tau2_map , t0_map , t1_map, r2_map ] = ffitmaps( nrows, ncols, nslices, nscans, nel, time2max_map, time2max_mapTimes, vvec2, scantimes, f4 );
 
 %% get f19 MIM volume information (ShimMatlabImageInfo) for frame 1
 image_info = evalin('base','f19_frame_1_info');
@@ -96,6 +96,7 @@ tau1_info           = image_info.getMutableCopy();
 tau2_info           = image_info.getMutableCopy();
 t0_info             = image_info.getMutableCopy();
 t1_info             = image_info.getMutableCopy();
+r2_info             = image_info.getMutableCopy();
 
 %% send the max_map result back to MIM
 max_info.setCustomName('Max Map')
@@ -136,6 +137,12 @@ bridge.sendImageToMim('t0_map', t0_info);
 t1_info.setCustomName('t1 Map')
 assignin('base', 't1_map', int16(t1_map));
 bridge.sendImageToMim('t1_map', t1_info);
+
+%% send the r-squared result back to MIM
+r2_info.setRescaleSlope(1/100);
+r2_info.setCustomName('R-Squared')
+assignin('base', 'r2_map', int16(100.*r2_map));
+bridge.sendImageToMim('r2_map', r2_info);
 
 %% Stop Timer
 fprintf('\nFinished F19 Processing.\nTotal Time %0.1f Minutes.\n\n',toc(timeStart)/60)
@@ -337,7 +344,7 @@ fprintf('done (%0.1f Seconds)',toc(tStart))
 
 end
 
-function [ d0_map, df_map, tau1_map, tau2_map, t0_map, t1_map ] = ffitmaps( nrow, ncol, nslice, nscans, nel, time2max_map, time2max_mapt, vvec2, et_vector, f4 )
+function [ d0_map, df_map, tau1_map, tau2_map, t0_map, t1_map, r2_map ] = ffitmaps( nrow, ncol, nslice, nscans, nel, time2max_map, time2max_mapt, vvec2, et_vector, f4 )
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -349,12 +356,14 @@ fullfit = fittype('(x>=t0 & x<=t1)*[d0 + (df-d0)*[1-exp(-(x-t0)/tau1)]] + (x>=t1
     'dependent', {'y'}, 'independent', {'x'}, ...
     'coefficients', {'d0', 'df', 'tau1', 'tau2', 't0', 't1'});
 
-d0_map = ones(nrow,ncol,nslice); %Map of d0
-df_map = ones(nrow,ncol,nslice); %Map of df
+d0_map = ones(nrow,ncol,nslice);   %Map of d0
+df_map = ones(nrow,ncol,nslice);   %Map of df
 tau1_map = ones(nrow,ncol,nslice); %Map of tau1
 tau2_map = ones(nrow,ncol,nslice); %Map of tau2
-t0_map = ones(nrow,ncol,nslice); %Map of t0
-t1_map = ones(nrow,ncol,nslice); %Map of t1
+t0_map = ones(nrow,ncol,nslice);   %Map of t0
+t1_map = ones(nrow,ncol,nslice);   %Map of t1
+r2_map = ones(nrow,ncol,nslice);   %Map of r-squared
+
 probe = zeros(nel,3);
 
 count = 1;
@@ -377,7 +386,7 @@ while count <= nel
                     %                     upper_limits = [vvec2(count, 1) + 50, vvec2(count, time2max_map(b, c, a)) + 50, 150, 150, et_vector(2, 1) + 60, time2max_mapt(b, c, a) + 60];%for validation
                     
                     start = [f4.d0, f4.df, f4.tau1, f4.tau2, f4.t0, f4.t1];
-                    f_vvec = fit(et_vector(2: nscans), vvec2(count, 2:nscans).', fullfit,'Lower', lower_limits,... %LEFT OFF HERE!!!!
+                    [f_vvec , gof] = fit(et_vector(2: nscans), vvec2(count, 2:nscans).', fullfit,'Lower', lower_limits,... %LEFT OFF HERE!!!!
                         'Upper', upper_limits, 'Startpoint', start);              
                     
                     
@@ -387,19 +396,23 @@ while count <= nel
                     %                     legend('off')
                     
                     
-                    d0_map(b, c, a) = f_vvec.d0;
-                    df_map (b, c, a) = f_vvec.df;
-                    tau1_map(b, c, a) = f_vvec.tau1;
-                    tau2_map(b, c, a) = f_vvec.tau2;
-                    t0_map(b, c, a) = f_vvec.t0;
-                    t1_map(b, c, a) = f_vvec.t1;
+                    d0_map(b, c, a)    = f_vvec.d0;
+                    df_map (b, c, a)   = f_vvec.df;
+                    tau1_map(b, c, a)  = f_vvec.tau1;
+                    tau2_map(b, c, a)  = f_vvec.tau2;
+                    t0_map(b, c, a)    = f_vvec.t0; 
+                    t1_map(b, c, a)    = f_vvec.t1;
+                    r2_map(b, c, a)    = gof.rsquare;
+                    
                 else
-                    d0_map(b, c, a) = 0;
-                    df_map (b, c, a) = 0;
-                    tau1_map(b, c, a) = 0;
-                    tau2_map(b, c, a) = 0;
-                    t0_map(b, c, a) = 0;
-                    t1_map(b, c, a) = 0;
+                    d0_map(b, c, a)    = 0;
+                    df_map (b, c, a)   = 0;
+                    tau1_map(b, c, a)  = 0;
+                    tau2_map(b, c, a)  = 0;
+                    t0_map(b, c, a)    = 0;
+                    t1_map(b, c, a)    = 0;
+                    r2_map(b, c, a)    = 1;
+                    
                 end
                 count = count + 1;
                 
