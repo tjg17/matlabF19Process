@@ -384,8 +384,8 @@ while count <= nel
                     %lower_limits = [vvec2(count, 1) - 50, vvec2(count, time2max_map(b, c, a)) - 50, f4.tau1 - mt1, f4.tau2 - mt2, et_vector(2, 1) - 60, time2max_mapt(b, c, a) - 60];
                     %upper_limits = [vvec2(count, 1) + 50, vvec2(count, time2max_map(b, c, a)) + 50, f4.tau1 + mt1, f4.tau2 + mt2, et_vector(2, 1) + 60, time2max_mapt(b, c, a) + 60];
                     
-                    lower_limits = [vvec2(count, 1) - 50, vvec2(count, time2max_map(b, c, a)) - 50, f4.tau1 - mt1, f4.tau2 - mt2, f4.t0 - 60, f4.t1 - 60];
-                    upper_limits = [vvec2(count, 1) + 50, vvec2(count, time2max_map(b, c, a)) + 50, f4.tau1 + mt1, f4.tau2 + mt2, f4.t0 + 60, f4.t1 + 60];
+                    lower_limits = [vvec2(count, 1) - 15, vvec2(count, time2max_map(b, c, a)) - 50, f4.tau1 - mt1, f4.tau2 - mt2, f4.t0 - 60, f4.t1 - 60];
+                    upper_limits = [vvec2(count, 1) + 15, vvec2(count, time2max_map(b, c, a)) + 50, f4.tau1 + mt1, f4.tau2 + mt2, f4.t0 + 60, f4.t1 + 60];
                     
                     start = [f4.d0, f4.df, f4.tau1, f4.tau2, f4.t0, f4.t1];
                     [f_vvec , gof] = fit(et_vector(2: nscans), vvec2(count, 2:nscans).', fullfit,'Lower', lower_limits,... %LEFT OFF HERE!!!!
