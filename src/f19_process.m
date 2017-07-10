@@ -66,6 +66,7 @@ nel       = nrows*ncols*nslices;    % number of elements in image
 
 %% Find mean pixel values in ROI
 [ means , mask ] = ComputePixelAverageIn3DROI( image, roi );
+assignin('base', 'mask', mask);
 
 %% Fitting of ROI volume
 [ f4 ] = ROIVentilationFit( last_pfp , means , scantimes , nscans );
