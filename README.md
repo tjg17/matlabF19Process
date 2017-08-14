@@ -1,0 +1,2 @@
+# matlabF19Process
+The repository contains MATLAB Code that is being used as an extension to the MIM image visualization software (https://www.mimsoftware.com/) for processing of F19. The code performs exponential washin and washout fitting for all voxels inside of the lung from a user-generated segmentation of the lung in the MIM environment. The extension outputs the fitting results as 3D maps of fit parameters that can then be viewed inside MIM with other imaging data.
